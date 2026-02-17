@@ -1,0 +1,60 @@
+{
+  "log": { "loglevel": "debug" },
+
+  "inbounds": [
+    {
+      "tag": "tun-in",
+      "protocol": "tun",
+      "settings": {
+        "interfaceName": "xray0",
+        "mtu": 1500,
+        "stack": "gvisor",
+        "autoRoute": false,
+        "strictRoute": false
+      }
+    }
+  ],
+
+  "outbounds": [
+    {
+      "tag": "proxy",
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": "77.221.145.78",
+            "port": 443,
+            "users": [
+              { "id": "010c812c-f20d-46aa-9b24-a76bd0451a8f", "encryption": "none" }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "security": "reality",
+        "realitySettings": {
+          "serverName": "google.com",
+          "publicKey": "72TobKObJ8FRwoL31wFaEWIyihSiFEZYjtZCe8RT-Vg",
+          "shortId": "26",
+          "fingerprint": "chrome"
+        },
+        "xhttpSettings": { "path": "/", "mode": "auto" }
+      }
+    },
+
+    { "tag": "direct", "protocol": "freedom" },
+    { "tag": "block", "protocol": "blackhole" }
+  ],
+
+  "routing": {
+    "domainStrategy": "AsIs",
+    "rules": [
+      {
+        "type": "field",
+        "inboundTag": ["tun-in"],
+        "outboundTag": "proxy"
+      }
+    ]
+  }
+}

@@ -1,0 +1,59 @@
+# ===== Flutter / Dart =====
+.dart_tool/
+.packages
+.pub/
+.pub-cache/
+build/
+coverage/
+*.log
+
+# Flutter generated files
+.flutter-plugins
+.flutter-plugins-dependencies
+.flutter_tool_state
+**/GeneratedPluginRegistrant.*
+**/flutter_export_environment.sh
+**/ephemeral/
+
+# ===== IDEs =====
+.idea/
+*.iml
+
+# VS Code (оставляем настройки, если хочешь)
+.vscode/
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
+
+# ===== macOS / Windows junk =====
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ===== Windows build artifacts =====
+**/windows/**/x64/
+**/windows/**/Debug/
+**/windows/**/Release/
+**/windows/**/flutter/
+**/windows/**/CMakeFiles/
+**/windows/**/.vs/
+**/windows/**/out/
+
+# ===== Secrets / local configs =====
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.keystore
+android/keystore.properties
+**/*.jks
+**/google-services.json
+**/firebase_options.dart
+
+# ===== VPN binaries (лучше не хранить в git) =====
+**/for windows/*.exe
+**/for windows/*.dll
+**/for windows/*.dat
+**/for windows/*.json

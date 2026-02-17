@@ -1,0 +1,95 @@
+{
+  "log": { "loglevel": "debug", "dnsLog": true },
+  "dns": {
+    "queryStrategy": "UseIPv4",
+    "servers": [
+      { "address": "https://1.1.1.1/dns-query" },
+      { "address": "https://8.8.8.8/dns-query" }
+    ]
+  },
+  "inbounds": [
+    {
+      "tag": "tun-in",
+      "protocol": "tun",
+      "settings": {
+        "name": "xray0",
+        "mtu": 1400
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": ["http", "tls", "quic"],
+        "routeOnly": true
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "proxy",
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": {{SERVER_ADDR}},
+            "port": {{SERVER_PORT}},
+            "users": [
+              { "id": {{VLESS_ID}}, "encryption": "none" }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "security": "reality",
+        "realitySettings": {
+          "serverName": {{SNI}},
+          "fingerprint": {{FP}},
+          "publicKey": {{PBK}},
+          "shortId": {{SID}},
+          "spiderX": {{SPX}}
+        },
+        "xhttpSettings": {
+          "host": "",
+          "path": {{XHTTP_PATH}},
+          "mode": {{XHTTP_MODE}}
+        }
+      }
+    },
+    {
+      "tag": "direct-lan",
+      "protocol": "freedom",
+      "sendThrough": {{SEND_THROUGH_LAN_IP}}
+    },
+    { "tag": "block", "protocol": "blackhole" }
+  ],
+  "routing": {
+    "domainStrategy": "IPIfNonMatch",
+    "rules": [
+      {
+        "type": "field",
+        "domain": ["domain:chatgpt.com", "domain:2ip.io", "domain:ifconfig.me"],
+        "outboundTag": "proxy"
+      },
+      {
+        "type": "field",
+        "domain": ["regexp:\\.ru$"],
+        "outboundTag": "direct-lan"
+      },
+      {
+        "type": "field",
+        "ip": ["geoip:private"],
+        "outboundTag": "direct-lan"
+      },
+      {
+        "type": "field",
+        "network": "udp",
+        "port": "443",
+        "outboundTag": "block"
+      },
+      {
+        "type": "field",
+        "network": "tcp,udp",
+        "outboundTag": "proxy"
+      }
+    ]
+  }
+}
