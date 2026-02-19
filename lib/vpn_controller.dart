@@ -20,6 +20,9 @@ class VpnController {
   final ValueNotifier<bool> _status = ValueNotifier<bool>(false);
   ValueListenable<bool> get status => _status;
   bool get isRunning => _status.value;
+  bool get windowsRequiresAdmin =>
+      Platform.isWindows &&
+      _windowsVpn.lastStartError == WindowsVpnStartError.requiresAdmin;
 
   VpnController() {
     _windowsVpn.status.addListener(() {
@@ -31,6 +34,7 @@ class VpnController {
 
   static Future<void> killAllXray() => WindowsVpnManager.killAllXray();
   static Future<String> windowsLogPath() => WindowsVpnManager.getLogPath();
+  static Future<bool> relaunchAsAdmin() => WindowsVpnManager.relaunchAsAdmin();
 
   Future<bool> connect(VpnNode node) async {
     if (Platform.isWindows) {

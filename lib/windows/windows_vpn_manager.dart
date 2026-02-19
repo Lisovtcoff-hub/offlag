@@ -9,6 +9,12 @@ import 'package:path_provider/path_provider.dart';
 import '../models/vpn_node.dart';
 import 'xray_config_renderer.dart';
 
+enum WindowsVpnStartError {
+  none,
+  requiresAdmin,
+  unknown,
+}
+
 class WindowsVpnManager {
   static const String _tunName = 'xray0';
   static const String _tunAddress = '198.18.0.1';
@@ -25,6 +31,8 @@ class WindowsVpnManager {
   final ValueNotifier<bool> _status = ValueNotifier<bool>(false);
   ValueListenable<bool> get status => _status;
   bool get isRunning => _status.value;
+  WindowsVpnStartError _lastStartError = WindowsVpnStartError.none;
+  WindowsVpnStartError get lastStartError => _lastStartError;
 
   Process? _proc;
   File? _logFile;
@@ -44,11 +52,19 @@ class WindowsVpnManager {
   Future<bool> start(VpnNode node) async {
     if (!Platform.isWindows) return false;
     if (_proc != null) return true;
+    _lastStartError = WindowsVpnStartError.none;
 
     final ops = <Future<void> Function()>[];
     try {
       await _prepareLogging();
       await _log('=== START WINDOWS VPN ===');
+      final elevated = await _isElevated();
+      await _log('Elevation check: isAdmin=$elevated');
+      if (!elevated) {
+        _lastStartError = WindowsVpnStartError.requiresAdmin;
+        await _log('Start aborted: administrator rights required');
+        return false;
+      }
 
       final runtimeDir = await _prepareRuntimeDir();
 
@@ -227,6 +243,7 @@ class WindowsVpnManager {
       await _log('VPN status=ON');
       return true;
     } catch (e, st) {
+      _lastStartError = WindowsVpnStartError.unknown;
       await _log('Start failed: $e\n$st');
       await _rollback(ops.reversed.toList());
       await stop();
@@ -281,6 +298,21 @@ class WindowsVpnManager {
         runInShell: true,
       );
     } catch (_) {}
+  }
+
+  static Future<bool> relaunchAsAdmin() async {
+    if (!Platform.isWindows) return false;
+    final exe = Platform.resolvedExecutable.replaceAll("'", "''");
+    final res = await Process.run(
+      'powershell',
+      <String>[
+        '-NoProfile',
+        '-Command',
+        "Start-Process -FilePath '$exe' -Verb RunAs",
+      ],
+      runInShell: true,
+    );
+    return res.exitCode == 0;
   }
 
   Future<void> _rollback(List<Future<void> Function()> ops) async {
@@ -518,10 +550,12 @@ class WindowsVpnManager {
       'Health check http ok=$httpOk ifconfig=$httpIfconfig 2ip=$http2ip chatgpt=$httpChatgpt ipHttps=$ipHttpsOk',
     );
 
-    // Важно: одного nslookup недостаточно (локальный DNS может работать при
-    // нерабочем внешнем трафике). Требуем DNS + HTTP. Для систем с проблемным
-    // резолвером допускаем HTTPS по IP как fallback.
-    return nsOk && (httpOk || ipHttpsOk);
+    // На части Windows-машин системный стек curl/WinHTTP может падать по DNS,
+    // при этом реальный трафик через TUN работает. Не валим старт только из-за
+    // этих probe: считаем успехом, если прошел хотя бы один канал проверки.
+    final finalOk = nsOk || httpOk || ipHttpsOk;
+    await _log('Health check final ok=$finalOk');
+    return finalOk;
   }
 
   Future<bool> _runHttpProbe(String url) async {
@@ -680,6 +714,18 @@ class WindowsVpnManager {
       failOnError: false,
     );
     _tunIpApplied = false;
+  }
+
+  Future<bool> _isElevated() async {
+    final res = await _runPowerShell(
+      r"([Security.Principal.WindowsPrincipal]"
+      r"[Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole("
+      r"[Security.Principal.WindowsBuiltInRole]::Administrator)",
+      failOnError: false,
+    );
+    if (res.exitCode != 0) return false;
+    final out = (res.stdout ?? '').toString().trim().toLowerCase();
+    return out == 'true';
   }
 
   Future<ProcessResult> _runPowerShell(

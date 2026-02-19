@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io' show Platform;
+import 'dart:io' show Platform, exit;
 
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -338,6 +338,10 @@ class _MainTabsState extends State<MainTabs> with TickerProviderStateMixin {
       setState(() => _connected = true);
     } else {
       setState(() => _connected = false);
+      if (Platform.isWindows && _vpn.windowsRequiresAdmin) {
+        await _showRequiresAdminDialog();
+        return;
+      }
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Не удалось запустить VPN')));
@@ -392,6 +396,10 @@ class _MainTabsState extends State<MainTabs> with TickerProviderStateMixin {
     if (ok) {
       setState(() => _connected = true);
     } else {
+      if (Platform.isWindows && _vpn.windowsRequiresAdmin) {
+        await _showRequiresAdminDialog();
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Не удалось подключиться к выбранному серверу'),
@@ -466,6 +474,45 @@ class _MainTabsState extends State<MainTabs> with TickerProviderStateMixin {
             ),
           ),
       ],
+    );
+  }
+
+  Future<void> _showRequiresAdminDialog() async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => NativeDialogFrame(
+        title: const Text(
+          'Нужны права администратора',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
+        content: const Text(
+          'Для настройки маршрутов VPN приложение нужно перезапустить с правами администратора.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Отмена'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final started = await VpnController.relaunchAsAdmin();
+              if (started) {
+                exit(0);
+              }
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Не удалось запустить приложение с правами администратора'),
+                ),
+              );
+            },
+            child: const Text('Перезапустить'),
+          ),
+        ],
+      ),
     );
   }
 }
