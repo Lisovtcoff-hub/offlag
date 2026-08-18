@@ -152,6 +152,6 @@ This repository contains the complete portfolio source architecture derived from
 
 ## Author
 
-Sergey Inozemtsev — Python Backend Developer
+Sergey Inozemtsev — Python backend developer
 
 GitHub: https://github.com/Lisovtcoff-hub
