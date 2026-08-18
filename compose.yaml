@@ -1,0 +1,14 @@
+services:
+  api:
+    build:
+      context: ./backend
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    volumes:
+      - offlag_data:/data
+    restart: unless-stopped
+
+volumes:
+  offlag_data:
