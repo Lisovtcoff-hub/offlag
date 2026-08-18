@@ -43,7 +43,7 @@ jobs:
           rsync -a /tmp/payload/root/ ./
 
           rm -rf .bootstrap
-          rm -f .github/workflows/bootstrap.yml
+          rm -f .github/workflows/ci.yml
 
       - name: Publish complete source tree
         run: |
