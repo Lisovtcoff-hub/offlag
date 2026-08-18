@@ -37,3 +37,5 @@ flutter run
 ## Notes
 - Desktop window size is fixed to 460x800.
 - App name and bundle IDs are set to OffLag.
+
+<!-- bootstrap trigger -->
