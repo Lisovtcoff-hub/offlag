@@ -1,6 +1,6 @@
 # OffLag
 
-[![CI](https://github.com/Lisovtcoff-hub/offlag/actions/workflows/ci.yml/badge.svg)](https://github.com/Lisovtcoff-hub/offlag/actions/workflows/ci.yml)
+[![CI](https://github.com/lisovcoff/offlag/actions/workflows/ci.yml/badge.svg)](https://github.com/lisovcoff/offlag/actions/workflows/ci.yml)
 
 A cross-platform VPN service composed of a Flutter client and a Go backend. OffLag provides passwordless authentication, subscription and payment flows, VPN node selection, 3x-ui panel synchronization, and native Windows Xray process management.
 
@@ -154,4 +154,4 @@ This repository contains the complete portfolio source architecture derived from
 
 Sergey Inozemtsev — Python backend developer
 
-GitHub: https://github.com/Lisovtcoff-hub
+GitHub: https://github.com/lisovcoff
